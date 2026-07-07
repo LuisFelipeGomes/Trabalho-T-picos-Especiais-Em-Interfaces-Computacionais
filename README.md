@@ -10,8 +10,6 @@ Abaixo consta a imagem ilustrativa da interface gráfica do painel:
 
 ![Painel de Fluxo](painel.png)
 
-*(Para acessar a imagem diretamente: [painel.png](file:///c:/Users/luisf/Trabalho-T-picos-Especiais-Em-Interfaces-Computacionais/painel.png))*
-
 ---
 
 ## Arquitetura do Sistema
