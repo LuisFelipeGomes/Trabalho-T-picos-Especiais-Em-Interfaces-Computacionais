@@ -4,7 +4,7 @@ Este projeto é um sistema de contagem de pessoas e controle de fluxo usando sen
 
 ---
 
-## 📸 Painel de Controle (Dashboard)
+## Painel de Controle (Dashboard)
 
 Aqui está o visual do painel em tempo real:
 
@@ -14,7 +14,7 @@ Aqui está o visual do painel em tempo real:
 
 ---
 
-## 🏗️ Como o sistema funciona
+## Como o sistema funciona
 
 O fluxo dos dados segue esse caminho:
 1. **Sensores (Entrada/Saída):** Medem a distância com o sensor ultrassônico. Se alguém passa na frente, o rádio inicia o envio.
@@ -44,7 +44,7 @@ graph TD
 
 ---
 
-## 💻 Divisão do Código (Software)
+## Divisão do Código (Software)
 
 *   **Backend ([app.py](file:///c:/Users/luisf/Trabalho-T-picos-Especiais-Em-Interfaces-Computacionais/app.py)):**
     *   Usa Flask para a API e rodar o servidor.
@@ -65,7 +65,7 @@ graph TD
 
 ---
 
-## 📟 Divisão das Placas (Arduino / Firmware)
+## Divisão das Placas (Arduino / Firmware)
 
 Os rádios funcionam no **canal 12** com velocidade de **250kbps**.
 
@@ -77,7 +77,7 @@ Os rádios funcionam no **canal 12** com velocidade de **250kbps**.
 *   **Nó de Saída ([saida_15.ino](file:///c:/Users/luisf/Trabalho-T-picos-Especiais-Em-Interfaces-Computacionais/saida_15/saida_15.ino)):**
     *   Componentes e pinagem idênticos ao nó de entrada, mas usa o ID de transmissor **15**.
 
-> ⚠️ **Pegadinha com os IDs das Pastas:**
+> **Pegadinha com os IDs das Pastas:**
 > Há uma inversão de lógica no código entre as pastas físicas e as variáveis do receptor central ([receptor_5.ino](file:///c:/Users/luisf/Trabalho-T-picos-Especiais-Em-Interfaces-Computacionais/receptor_5/receptor_5.ino)):
 > *   O arquivo `entrada_47.ino` define localmente seu ID como 47.
 > *   O arquivo `saida_15.ino` define localmente seu ID como 15.
@@ -96,7 +96,7 @@ Os rádios funcionam no **canal 12** com velocidade de **250kbps**.
 
 ---
 
-## 🚀 Como Executar
+## Como Executar
 
 ### 1. Arduino
 1. Instale a biblioteca `RF24` pela IDE do Arduino.
