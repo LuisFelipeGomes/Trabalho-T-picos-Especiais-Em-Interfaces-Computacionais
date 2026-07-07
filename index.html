@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catraca RF · Painel de Fluxo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0F14;
+    --panel:#121821;
+    --panel-2:#161E29;
+    --line:#212B38;
+    --text:#E8EDF2;
+    --muted:#6E7A87;
+    --in:#00E08A;
+    --in-dim:#0A3D2C;
+    --out:#FF8A3D;
+    --out-dim:#3D2410;
+    --err:#FF4D6D;
+    --blue:#2F7CFF;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% -10%, rgba(47,124,255,0.10), transparent 45%),
+      radial-gradient(circle at 100% 0%, rgba(0,224,138,0.07), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    padding:28px 24px 60px;
+  }
+  h1,h2,h3, .num{ font-family:'Space Grotesk', sans-serif; }
+
+  /* ── Top bar ───────────────────────────────────────────── */
+  .topbar{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    flex-wrap:wrap; gap:16px;
+    max-width:1180px; margin:0 auto 22px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;
+  }
+  .brand .eyebrow{
+    font-size:11px; letter-spacing:.18em; color:var(--muted); text-transform:uppercase;
+  }
+  .brand h1{ font-size:26px; font-weight:700; margin-top:4px; }
+  .brand h1 span{ color:var(--in); }
+  .status-pills{ display:flex; gap:10px; flex-wrap:wrap; }
+  .pill{
+    display:flex; align-items:center; gap:7px;
+    background:var(--panel); border:1px solid var(--line);
+    padding:7px 12px; border-radius:20px; font-size:12px; color:var(--muted);
+  }
+  .dot{ width:7px; height:7px; border-radius:50%; background:var(--muted); }
+  .dot.on{ background:var(--in); box-shadow:0 0 8px var(--in); }
+  .dot.off{ background:var(--err); box-shadow:0 0 8px var(--err); }
+
+  /* ── Grid principal ───────────────────────────────────── */
+  .grid{
+    max-width:1180px; margin:0 auto;
+    display:grid; grid-template-columns: 1.55fr 1fr; gap:18px;
+  }
+  @media (max-width:900px){ .grid{ grid-template-columns: 1fr; } }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:20px;
+  }
+  .panel h2{
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:16px; font-weight:600;
+  }
+
+  /* ── Catraca / fluxo ──────────────────────────────────── */
+  .gate-stage{ display:grid; grid-template-columns:1fr auto 1fr; gap:18px; align-items:center; margin-bottom:18px; }
+  .lane{ text-align:center; }
+  .lane .label{ font-size:11px; letter-spacing:.14em; color:var(--muted); margin-bottom:8px; }
+  .lane.in .label{ color:var(--in); }
+  .lane.out .label{ color:var(--out); }
+  .arrow{
+    font-size:34px; line-height:1; margin-bottom:6px; transition:transform .25s, text-shadow .25s;
+  }
+  .lane.in .arrow{ color:var(--in); }
+  .lane.out .arrow{ color:var(--out); }
+  .arrow.pulse{ transform:scale(1.35); text-shadow:0 0 18px currentColor; }
+
+  .dist-bar{ height:6px; border-radius:4px; background:var(--panel-2); overflow:hidden; margin-top:8px; }
+  .dist-bar i{ display:block; height:100%; width:0%; transition:width .3s ease; }
+  .lane.in .dist-bar i{ background:var(--in); }
+  .lane.out .dist-bar i{ background:var(--out); }
+  .dist-val{ font-size:11px; color:var(--muted); margin-top:4px; }
+
+  .occupancy{
+    text-align:center; border-left:1px solid var(--line); border-right:1px solid var(--line);
+    padding:0 22px;
+  }
+  .occupancy .num{ font-size:58px; font-weight:700; line-height:1; }
+  .occupancy .lbl{ font-size:11px; color:var(--muted); letter-spacing:.14em; margin-top:6px; }
+
+  .totals{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .total-card{ background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .total-card .t{ font-size:11px; color:var(--muted); letter-spacing:.1em; }
+  .total-card .n{ font-size:24px; font-weight:600; margin-top:4px; }
+  .total-card.in .n{ color:var(--in); }
+  .total-card.out .n{ color:var(--out); }
+
+  /* ── Sparkline ────────────────────────────────────────── */
+  .spark-wrap{ margin-top:18px; }
+  svg.spark{ width:100%; height:64px; display:block; }
+
+  /* ── Trace do protocolo (assinatura visual) ──────────── */
+  .trace{
+    background:#0A0E13; border:1px solid var(--line); border-radius:10px;
+    height:300px; overflow-y:auto; padding:12px 14px; font-size:12px;
+  }
+  .trace::-webkit-scrollbar{ width:6px; }
+  .trace::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+  .trace-line{ display:flex; gap:8px; padding:3px 0; color:var(--muted); white-space:nowrap; }
+  .trace-line .step{ color:var(--blue); font-weight:600; }
+  .trace-line.in .step{ color:var(--in); }
+  .trace-line.out .step{ color:var(--out); }
+  .trace-line .ts{ color:var(--muted); }
+  .trace-empty{ color:var(--muted); font-style:italic; }
+
+  .pkt-row{ display:flex; gap:18px; margin-top:14px; font-size:11px; color:var(--muted); }
+  .pkt-row b{ color:var(--text); }
+
+  /* ── Footer / controles ──────────────────────────────── */
+  .footer{ max-width:1180px; margin:18px auto 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  .footer .hint{ font-size:11px; color:var(--muted); }
+  button.reset{
+    background:transparent; border:1px solid var(--err); color:var(--err);
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.06em;
+    padding:9px 16px; border-radius:8px; cursor:pointer; transition:background .15s,color .15s;
+  }
+  button.reset:hover{ background:var(--err); color:#0B0F14; }
+  #apiBase{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    font-family:'IBM Plex Mono', monospace; font-size:11px; padding:7px 10px; border-radius:7px; width:220px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="eyebrow">ReDuino · MACA 4-way + CSMA</div>
+      <h1>Catraca<span>RF</span> — Painel de Fluxo</h1>
+    </div>
+    <div class="status-pills">
+      <div class="pill"><span class="dot off" id="dotSerial"></span><span id="txtSerial">gateway offline</span></div>
+      <div class="pill"><span class="dot" id="dotErr"></span><span id="txtErr">0 pkt err</span></div>
+      <div class="pill" id="pillUpdated">última leitura: —</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Coluna principal -->
+    <div>
+      <div class="panel">
+        <h2>Sensores · Nó A (entrada) / Nó B (saída)</h2>
+        <div class="gate-stage">
+          <div class="lane in">
+            <div class="label">ENTRADA · NÓ A</div>
+            <div class="arrow" id="arrowIn">➜ ▌</div>
+            <div class="dist-bar"><i id="barA"></i></div>
+            <div class="dist-val" id="valA">-- cm</div>
+          </div>
+          <div class="occupancy">
+            <div class="num" id="ocupacao">0</div>
+            <div class="lbl">pessoas no ambiente</div>
+          </div>
+          <div class="lane out">
+            <div class="label">SAÍDA · NÓ B</div>
+            <div class="arrow" id="arrowOut">▌ ➜</div>
+            <div class="dist-bar"><i id="barB"></i></div>
+            <div class="dist-val" id="valB">-- cm</div>
+          </div>
+        </div>
+
+        <div class="totals">
+          <div class="total-card in">
+            <div class="t">TOTAL ENTRADAS</div>
+            <div class="n" id="totalEntradas">0</div>
+          </div>
+          <div class="total-card out">
+            <div class="t">TOTAL SAÍDAS</div>
+            <div class="n" id="totalSaidas">0</div>
+          </div>
+        </div>
+
+        <div class="spark-wrap">
+          <h2 style="margin-top:18px">Ocupação · últimas leituras</h2>
+          <svg class="spark" viewBox="0 0 600 64" preserveAspectRatio="none" id="spark"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coluna lateral: trace do protocolo -->
+    <div>
+      <div class="panel">
+        <h2>Trace do handshake (RTS → CTS → DATA → ACK)</h2>
+        <div class="trace" id="trace">
+          <div class="trace-line"><span class="trace-empty">aguardando eventos do gateway...</span></div>
+        </div>
+        <div class="pkt-row">
+          <div>OK: <b id="pktOK">0</b></div>
+          <div>ERR: <b id="pktErr">0</b></div>
+          <div>Canal: <b>100</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="hint">
+      API: <input id="apiBase" spellcheck="false">
+    </div>
+    <button class="reset" id="btnReset">ZERAR CONTADORES</button>
+  </div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+// Usa o mesmo host/porta que serviu a página — funciona em qualquer dispositivo da rede
+$('apiBase').value = window.location.origin;
+let apiBase = window.location.origin;
+$('apiBase').addEventListener('change', (e) => { apiBase = e.target.value.replace(/\/$/, ''); });
+
+const histOcupacao = [];
+const seenEventTimestamps = new Set();
+
+function distPercent(cm){
+  if (cm === null || cm === undefined || cm >= 9999) return 0;
+  const pct = 100 - Math.min(100, (cm / 150) * 100);
+  return Math.max(4, pct);
+}
+
+function pulse(el){
+  el.classList.add('pulse');
+  setTimeout(() => el.classList.remove('pulse'), 350);
+}
+
+function drawSpark(values){
+  const svg = $('spark');
+  if (values.length < 2){ svg.innerHTML = ''; return; }
+  const max = Math.max(1, ...values);
+  const w = 600, h = 64, n = values.length;
+  const pts = values.map((v,i) => {
+    const x = (i/(n-1)) * w;
+    const y = h - (v/max) * (h-8) - 4;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  svg.innerHTML = `
+    <polyline points="${pts}" fill="none" stroke="#00E08A" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${pts.split(' ').pop().split(',')[0]}" cy="${pts.split(' ').pop().split(',')[1]}" r="3.5" fill="#00E08A"/>
+  `;
+}
+
+function addTrace(tipo, total, ts){
+  const wrap = $('trace');
+  if (wrap.querySelector('.trace-empty')) wrap.innerHTML = '';
+  const hora = new Date(ts).toLocaleTimeString('pt-BR', { hour12:false });
+  const linha = document.createElement('div');
+  linha.className = `trace-line ${tipo === 'entrada' ? 'in' : 'out'}`;
+  linha.innerHTML = `<span class="ts">${hora}</span>` +
+    `<span class="step">RTS</span>→<span class="step">CTS</span>→<span class="step">DATA</span>→<span class="step">ACK</span>` +
+    `<span>· ${tipo.toUpperCase()} #${total}</span>`;
+  wrap.prepend(linha);
+  while (wrap.children.length > 60) wrap.removeChild(wrap.lastChild);
+}
+
+async function fetchJSON(path){
+  const res = await fetch(`${apiBase}${path}`);
+  if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+  return res.json();
+}
+
+async function poll(){
+  try{
+    const status = await fetchJSON('/api/status');
+
+    $('dotSerial').className = `dot ${status.serialConectada ? 'on' : 'off'}`;
+    $('txtSerial').textContent = status.serialConectada ? 'gateway online' : 'gateway offline';
+    $('dotErr').className = `dot ${status.pktErr > 0 ? 'off' : 'on'}`;
+    $('txtErr').textContent = `${status.pktErr ?? 0} pkt err`;
+    $('pillUpdated').textContent = status.ultimaLeitura
+      ? `última leitura: ${new Date(status.ultimaLeitura).toLocaleTimeString('pt-BR')}`
+      : 'última leitura: —';
+
+    $('ocupacao').textContent = status.ocupacao ?? 0;
+    $('totalEntradas').textContent = status.entradas ?? 0;
+    $('totalSaidas').textContent = status.saidas ?? 0;
+    $('pktOK').textContent = status.pktOK ?? 0;
+    $('pktErr').textContent = status.pktErr ?? 0;
+
+    $('valA').textContent = status.distA != null ? `${status.distA} cm` : '-- cm';
+    $('valB').textContent = status.distB != null ? `${status.distB} cm` : '-- cm';
+    $('barA').style.width = distPercent(status.distA) + '%';
+    $('barB').style.width = distPercent(status.distB) + '%';
+
+    histOcupacao.push(status.ocupacao ?? 0);
+    if (histOcupacao.length > 40) histOcupacao.shift();
+    drawSpark(histOcupacao);
+
+    const eventos = await fetchJSON('/api/eventos');
+    eventos.slice(0, 8).reverse().forEach(ev => {
+      const key = `${ev.tipo}-${ev.total}-${ev.ts}`;
+      if (seenEventTimestamps.has(key)) return;
+      seenEventTimestamps.add(key);
+      addTrace(ev.tipo, ev.total, ev.ts);
+      pulse(ev.tipo === 'entrada' ? $('arrowIn') : $('arrowOut'));
+    });
+
+  }catch(err){
+    $('dotSerial').className = 'dot off';
+    $('txtSerial').textContent = 'backend inacessível';
+  }
+}
+
+$('btnReset').addEventListener('click', async () => {
+  try{
+    await fetch(`${apiBase}/api/reset`, { method:'POST' });
+    histOcupacao.length = 0;
+    seenEventTimestamps.clear();
+    $('trace').innerHTML = '<div class="trace-line"><span class="trace-empty">contadores zerados</span></div>';
+  }catch(e){ /* backend pode estar offline */ }
+});
+
+poll();
+setInterval(poll, 1200);
+</script>
+</body>
+</html>
